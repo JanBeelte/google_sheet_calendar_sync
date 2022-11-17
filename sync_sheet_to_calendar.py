@@ -35,13 +35,17 @@ def pandas_to_google_event(event_pd):
         event_name = event_pd.Wo
 
     color_id = None
+    suffix = ''
     if 'fix' in event_pd.Stand.lower():
         color_id = '11'
-    elif 'option' in event_pd.Stand.lower():
-        color_id = '5'
+    else:
+        if 'option' in event_pd.Stand.lower():
+            color_id = '5'
+        if check_str_content(event_pd.Stand):
+            suffix = ' ({})'.format(event_pd.Stand)
 
     return Event(
-        'FS: {}'.format(event_name),
+        'FS: {}{}'.format(event_name, suffix),
         start=event_pd.Datum,
         location=event_pd.Wo,
         description='Stand: {}'.format(event_pd.Stand),
@@ -69,15 +73,17 @@ if __name__ == '__main__':
 
     print('Syncing events to calendar...')
     gc = GoogleCalendar(CALENDAR_ID, credentials_path=CREDENTIALS_PATH)
+    gc.clear_calendar()
 
     # Create all events from sheets
     for idx, event_pd in all_entries.iterrows():
-        # Clear old event in case it exists
+        # Clear old event in case it still exists
         events = gc[event_pd.Datum:event_pd.Datum]
         for event in events:
             # print('Clearing {} ...'.format(event))
             gc.delete_event(event)
 
+        # Add new event
         event = pandas_to_google_event(event_pd=event_pd)
         gc.add_event(event)
         # For testing only sync the first entry:
