@@ -1,11 +1,18 @@
 import pygsheets
 import pandas as pd
+from gcsa.google_calendar import GoogleCalendar
+from gcsa.event import Event
 
+CREDENTIALS_PATH = "client_secret_616621345489-h4bc2astbq7lbmdbda7eqa5cpmm64fv8.apps.googleusercontent.com.json"
 SHEET_ID = '1bfVVtUM8FFe3bB4JDwnd0TsJ56G2RutqNk9rshx3Rf4'
 SHEETS_TO_SYNC = [
     '2023',
     '2024'
 ]
+CALENDAR_ID = '7aff4042ee7d9e05524e8ea9b5b7be55d1b6fee3090a7acc161160456da0d819@group.calendar.google.com'
+
+def check_str_content(content):
+    return len(content)>0 and not content.isspace()
 
 def prepare_sheet_data(sheet_name):
     sheet = doc_handle.worksheet_by_title(sheet_name)
@@ -15,16 +22,35 @@ def prepare_sheet_data(sheet_name):
     sheet_df.rename(columns={'':'Datum'}, inplace=True)
     sheet_df.drop([0,1], inplace=True)
     sheet_df.reset_index(drop=True, inplace=True)
-    sheet_df.Datum = pd.to_datetime(sheet_df.Datum, format='%d.%m.%Y')
-    sheet_df.Stand = sheet_df.Stand.map(str).map(lambda content: content.strip())
-    sheet_df['Interesting'] = sheet_df.Stand.map(lambda content: len(content)>0 and not content.isspace())
+    sheet_df.Datum = pd.to_datetime(sheet_df.Datum, format='%d.%m.%Y').dt.date
+    sheet_df[['Wo', 'Was', 'Stand']] = sheet_df[['Wo', 'Was', 'Stand']].applymap(str.strip)
+    sheet_df['Interesting'] = sheet_df.Stand.map(check_str_content)
     return sheet_df
 
+def pandas_to_google_event(event_pd):
+    event_name = event_pd.Was
+    if not check_str_content(event_name):
+        event_name = event_pd.Wo
+
+    color_id = None
+    if 'fix' in event_pd.Stand.lower():
+        color_id = '11'
+    elif 'option' in event_pd.Stand.lower():
+        color_id = '5'
+
+    return Event(
+        'FS: {}'.format(event_name),
+        start=event_pd.Datum,
+        location=event_pd.Wo,
+        description='Stand: {}'.format(event_pd.Stand),
+        color_id=color_id
+    )
+
 if __name__ == '__main__':
-    client = pygsheets.authorize("client_secret_616621345489-h4bc2astbq7lbmdbda7eqa5cpmm64fv8.apps.googleusercontent.com.json")
+    client = pygsheets.authorize(CREDENTIALS_PATH)
     doc_handle = client.open_by_key(SHEET_ID)
     all_sheets = doc_handle.worksheets()
-    print('Available Sheets: {}'.format(all_sheets))
+    # print('Available Sheets: {}'.format(all_sheets))
     
     all_entries = pd.DataFrame()
     for sheet_name in SHEETS_TO_SYNC:
@@ -35,4 +61,22 @@ if __name__ == '__main__':
         all_entries = pd.concat([all_entries, entries_for_calendar]) 
 
     all_entries.reset_index(drop=True, inplace=True)
-    print(all_entries)
+    # print(all_entries)
+
+    gc = GoogleCalendar(CALENDAR_ID, credentials_path=CREDENTIALS_PATH)
+
+    # Create all events from sheets
+    for idx, event_pd in all_entries.iterrows():
+        # Clear old event in case it exists
+        events = gc[event_pd.Datum:event_pd.Datum]
+        for event in events:
+            # print('Clearing {} ...'.format(event))
+            gc.delete_event(event)
+
+        event = pandas_to_google_event(event_pd=event_pd)
+        gc.add_event(event)
+        break
+
+    # Print all events:
+    # for event in gc:
+    #     print(event)
