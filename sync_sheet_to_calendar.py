@@ -1,7 +1,10 @@
+#!/usr/local/bin/python3
 import pygsheets
 import pandas as pd
 from gcsa.google_calendar import GoogleCalendar
 from gcsa.event import Event
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 CREDENTIALS_PATH = "client_secret_616621345489-h4bc2astbq7lbmdbda7eqa5cpmm64fv8.apps.googleusercontent.com.json"
 SHEET_ID = '1bfVVtUM8FFe3bB4JDwnd0TsJ56G2RutqNk9rshx3Rf4'
@@ -14,9 +17,8 @@ CALENDAR_ID = '7aff4042ee7d9e05524e8ea9b5b7be55d1b6fee3090a7acc161160456da0d819@
 def check_str_content(content):
     return len(content)>0 and not content.isspace()
 
-def prepare_sheet_data(sheet_name):
-    sheet = doc_handle.worksheet_by_title(sheet_name)
-    sheet_df = sheet.get_as_df(start='D3',end='G')
+def prepare_sheet_data(sheet):
+    sheet_df = sheet.get_as_df(start='D3',end='G', include_tailing_empty=True)
     sheet_df.columns = sheet_df.iloc[1]
     sheet_df.columns.name = None
     sheet_df.rename(columns={'':'Datum'}, inplace=True)
@@ -49,12 +51,13 @@ def pandas_to_google_event(event_pd):
 if __name__ == '__main__':
     client = pygsheets.authorize(CREDENTIALS_PATH)
     doc_handle = client.open_by_key(SHEET_ID)
-    all_sheets = doc_handle.worksheets()
+    # all_sheets = doc_handle.worksheets()
     # print('Available Sheets: {}'.format(all_sheets))
     
     all_entries = pd.DataFrame()
     for sheet_name in SHEETS_TO_SYNC:
-        sheet_df = prepare_sheet_data(sheet_name=sheet_name)
+        sheet = doc_handle.worksheet_by_title(sheet_name)
+        sheet_df = prepare_sheet_data(sheet=sheet)
         # print(sheet_df.columns)
         # print(sheet_df)
         entries_for_calendar = sheet_df[sheet_df.Interesting]
@@ -75,8 +78,12 @@ if __name__ == '__main__':
 
         event = pandas_to_google_event(event_pd=event_pd)
         gc.add_event(event)
-        break
+        # For testing only sync the first entry:
+        # break
 
-    # Print all events:
-    # for event in gc:
-    #     print(event)
+
+    print('Events in the next year:')
+    for event in gc:
+        print(event)
+
+    print('Calendar Sync finished!')
