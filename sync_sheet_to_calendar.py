@@ -49,6 +49,7 @@ def pandas_to_google_event(event_pd):
     )
 
 if __name__ == '__main__':
+    print('Reading events from sheets...')
     client = pygsheets.authorize(CREDENTIALS_PATH)
     doc_handle = client.open_by_key(SHEET_ID)
     # all_sheets = doc_handle.worksheets()
@@ -66,6 +67,7 @@ if __name__ == '__main__':
     all_entries.reset_index(drop=True, inplace=True)
     # print(all_entries)
 
+    print('Syncing events to calendar...')
     gc = GoogleCalendar(CALENDAR_ID, credentials_path=CREDENTIALS_PATH)
 
     # Create all events from sheets
