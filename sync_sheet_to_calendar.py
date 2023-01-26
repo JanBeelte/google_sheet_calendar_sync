@@ -54,7 +54,7 @@ def pandas_to_google_event(event_pd):
 
 if __name__ == '__main__':
     print('Reading events from sheets...')
-    client = pygsheets.authorize(CREDENTIALS_PATH)
+    client = pygsheets.authorize(CREDENTIALS_PATH, local=True)
     doc_handle = client.open_by_key(SHEET_ID)
     # all_sheets = doc_handle.worksheets()
     # print('Available Sheets: {}'.format(all_sheets))
