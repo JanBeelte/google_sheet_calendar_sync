@@ -3,8 +3,8 @@ FROM python:3.11.0-slim-bullseye
 RUN apt-get update && apt-get -y install cron
 # Install python dependencies
 RUN mkdir /google_sync
-COPY requirements.txt /google_sync
-RUN pip install -r /google_sync/requirements.txt
+COPY requirements_sync.txt /google_sync
+RUN pip install -r /google_sync/requirements_sync.txt
 # Copy hello-cron file to the cron.d directory
 COPY cron-file /etc/cron.d/
 # Give execution rights on the cron job
