@@ -5,13 +5,24 @@ import pandas as pd
 import pygsheets
 from gcsa.event import Event
 from gcsa.google_calendar import GoogleCalendar
+from google.oauth2 import service_account
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-CREDENTIALS_PATH = "client_secret_616621345489-h4bc2astbq7lbmdbda7eqa5cpmm64fv8.apps.googleusercontent.com.json"
+SCOPES = [
+    "https://www.googleapis.com/auth/calendar",
+    "https://www.googleapis.com/auth/spreadsheets.readonly",
+]
+SERVICE_ACCOUNT_FILE = "fs-calendar-408013-56816c175498.json"
 SHEET_ID = "1bfVVtUM8FFe3bB4JDwnd0TsJ56G2RutqNk9rshx3Rf4"
 SHEETS_TO_SYNC = ["2024", "2025"]
 CALENDAR_ID = "7aff4042ee7d9e05524e8ea9b5b7be55d1b6fee3090a7acc161160456da0d819@group.calendar.google.com"
+CLEAR_CALENDAR = False
+
+
+CREDENTIALS = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+)
 
 
 def check_str_content(content):
@@ -57,9 +68,12 @@ def pandas_to_google_event(event_pd):
     )
 
 
-if __name__ == "__main__":
-    print("Reading events from sheets...")
-    client = pygsheets.authorize(CREDENTIALS_PATH, local=True)
+def read_master_sheet():
+    client = pygsheets.authorize(
+        service_account_file=SERVICE_ACCOUNT_FILE,
+        scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
+        local=True,
+    )
     doc_handle = client.open_by_key(SHEET_ID)
     # all_sheets = doc_handle.worksheets()
     # print('Available Sheets: {}'.format(all_sheets))
@@ -74,25 +88,42 @@ if __name__ == "__main__":
         all_entries = pd.concat([all_entries, entries_for_calendar])
 
     all_entries.reset_index(drop=True, inplace=True)
-    # print(all_entries)
+    return all_entries
 
-    print("Syncing events to calendar...")
-    gc = GoogleCalendar(CALENDAR_ID, credentials_path=CREDENTIALS_PATH)
-    gc.clear_calendar()
 
+def write_to_calendar(gc, all_entries):
     # Create all events from sheets
     for idx, event_pd in all_entries.iterrows():
         # Clear old event in case it still exists
-        events = gc[event_pd.Datum : event_pd.Datum]
-        for event in events:
-            # print('Clearing {} ...'.format(event))
-            gc.delete_event(event)
+        if not CLEAR_CALENDAR:
+            events = gc[event_pd.Datum : event_pd.Datum]
+            for event in events:
+                # print('Clearing {} ...'.format(event))
+                gc.delete_event(event)
 
         # Add new event
         event = pandas_to_google_event(event_pd=event_pd)
         gc.add_event(event)
         # For testing only sync the first entry:
         # break
+    return gc
+
+
+if __name__ == "__main__":
+    print("Reading events from sheet...")
+    all_entries = read_master_sheet()
+    print("Events in Master-Sheet:")
+    with pd.option_context("display.max_rows", None):
+        print(all_entries)
+
+    print("Syncing events to calendar...")
+    gc = GoogleCalendar(CALENDAR_ID, credentials=CREDENTIALS)
+    if CLEAR_CALENDAR:
+        # This only works on primary calendars
+        # gc.clear_calendar()
+        for event in gc:
+            gc.delete_event(event)
+    write_to_calendar(gc, all_entries)
 
     print("Events in the next year:")
     for event in gc:

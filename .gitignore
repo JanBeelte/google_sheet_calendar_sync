@@ -1,5 +1,6 @@
 *secret*
 sheets.googleapis.com-python.json
+fs-calendar*.json
 token.pickle
 *.tar
 *_venv
