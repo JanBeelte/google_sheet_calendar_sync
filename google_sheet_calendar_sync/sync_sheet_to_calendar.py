@@ -13,9 +13,9 @@ SCOPES = [
     "https://www.googleapis.com/auth/calendar",
     "https://www.googleapis.com/auth/spreadsheets.readonly",
 ]
-SERVICE_ACCOUNT_FILE = "fs-calendar-408013-56816c175498.json"
+SERVICE_ACCOUNT_FILE = "fs-calendar-408013-bbc8c645727f.json"
 SHEET_ID = "1bfVVtUM8FFe3bB4JDwnd0TsJ56G2RutqNk9rshx3Rf4"
-SHEETS_TO_SYNC = ["2024", "2025"]
+SHEETS_TO_SYNC = ["2024", "2025", "2026"]
 CALENDAR_ID = "7aff4042ee7d9e05524e8ea9b5b7be55d1b6fee3090a7acc161160456da0d819@group.calendar.google.com"
 CLEAR_CALENDAR = False
 
@@ -37,9 +37,7 @@ def prepare_sheet_data(sheet):
     sheet_df.drop([0, 1], inplace=True)
     sheet_df.reset_index(drop=True, inplace=True)
     sheet_df.Datum = pd.to_datetime(sheet_df.Datum, format="%d.%m.%Y").dt.date
-    sheet_df[["Wo", "Was", "Stand"]] = sheet_df[["Wo", "Was", "Stand"]].applymap(
-        str.strip
-    )
+    sheet_df[["Wo", "Was", "Stand"]] = sheet_df[["Wo", "Was", "Stand"]].map(str.strip)
     sheet_df["Interesting"] = sheet_df.Stand.map(check_str_content)
     return sheet_df
 
@@ -109,7 +107,7 @@ def write_to_calendar(gc, all_entries):
     return gc
 
 
-if __name__ == "__main__":
+def main():
     print("Reading events from sheet...")
     all_entries = read_master_sheet()
     print("Events in Master-Sheet:")
@@ -130,3 +128,7 @@ if __name__ == "__main__":
         print(event)
 
     print("Calendar Sync finished!")
+
+
+if __name__ == "__main__":
+    main()

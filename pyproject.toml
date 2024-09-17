@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "google-sheet-calendar-sync"
+version = "0.1.0"
+description = ""
+authors = ["Jan Beelte <jan.beelte@mailbox.org>"]
+readme = "README.md"
+
+
+[tool.poetry.scripts]
+sync = "google_sheet_calendar_sync.sync_sheet_to_calendar:main"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pandas = "^2.2.2"
+pygsheets = "^2.0.6"
+gcsa = "^2.3.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
