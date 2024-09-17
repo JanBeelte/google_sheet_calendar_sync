@@ -137,7 +137,10 @@ def main():
             sync,
             CronTrigger.from_crontab("50 * * * *"),
         )
-        scheduler.run_until_stopped()
+        try:
+            scheduler.run_until_stopped()
+        except KeyboardInterrupt:
+            scheduler.stop()
 
 
 if __name__ == "__main__":
