@@ -2,3 +2,6 @@ services:
   google_sync:
     build: .
     restart: always
+    volumes:
+      - ./credentials:/app/credentials
+    # command: [ "ls", "-la", "/app/" ]

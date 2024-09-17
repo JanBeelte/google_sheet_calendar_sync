@@ -1,4 +1,0 @@
-services:
-  google_sync:
-    image: google_sync-google_sync
-    restart: always

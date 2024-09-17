@@ -3,26 +3,19 @@ import warnings
 
 import pandas as pd
 import pygsheets
+from apscheduler import Scheduler
+from apscheduler.triggers.cron import CronTrigger
 from gcsa.event import Event
 from gcsa.google_calendar import GoogleCalendar
 from google.oauth2 import service_account
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-SCOPES = [
-    "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/spreadsheets.readonly",
-]
-SERVICE_ACCOUNT_FILE = "fs-calendar-408013-bbc8c645727f.json"
+SERVICE_ACCOUNT_FILE = "credentials/fs-calendar-408013-bbc8c645727f.json"
 SHEET_ID = "1bfVVtUM8FFe3bB4JDwnd0TsJ56G2RutqNk9rshx3Rf4"
 SHEETS_TO_SYNC = ["2024", "2025", "2026"]
 CALENDAR_ID = "7aff4042ee7d9e05524e8ea9b5b7be55d1b6fee3090a7acc161160456da0d819@group.calendar.google.com"
 CLEAR_CALENDAR = False
-
-
-CREDENTIALS = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
 
 
 def check_str_content(content):
@@ -107,20 +100,25 @@ def write_to_calendar(gc, all_entries):
     return gc
 
 
-def main():
+def sync():
     print("Reading events from sheet...")
     all_entries = read_master_sheet()
     print("Events in Master-Sheet:")
     with pd.option_context("display.max_rows", None):
         print(all_entries)
 
-    print("Syncing events to calendar...")
-    gc = GoogleCalendar(CALENDAR_ID, credentials=CREDENTIALS)
+    calendar_credentials = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=["https://www.googleapis.com/auth/calendar"]
+    )
+    gc = GoogleCalendar(CALENDAR_ID, credentials=calendar_credentials)
     if CLEAR_CALENDAR:
         # This only works on primary calendars
         # gc.clear_calendar()
+        print("Clearing calendar...")
         for event in gc:
             gc.delete_event(event)
+
+    print("Syncing events to calendar...")
     write_to_calendar(gc, all_entries)
 
     print("Events in the next year:")
@@ -128,6 +126,18 @@ def main():
         print(event)
 
     print("Calendar Sync finished!")
+
+
+def main():
+    sync()
+    print("Starting scheduler...")
+
+    with Scheduler() as scheduler:
+        scheduler.add_schedule(
+            sync,
+            CronTrigger.from_crontab("50 * * * *"),
+        )
+        scheduler.run_until_stopped()
 
 
 if __name__ == "__main__":

@@ -1,4 +1,0 @@
-# Sync every minute, for testing only:
-# * * * * * cd /google_sync && ./sync_sheet_to_calendar.py > /proc/1/fd/1 2>/proc/1/fd/2
-# Sync once every full hour:
-50 * * * * cd /google_sync && ./sync_sheet_to_calendar.py > /proc/1/fd/1 2>/proc/1/fd/2

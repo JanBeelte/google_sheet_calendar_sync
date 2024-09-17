@@ -14,7 +14,11 @@ python = "^3.12"
 pandas = "^2.2.2"
 pygsheets = "^2.0.6"
 gcsa = "^2.3.0"
+apscheduler = {git = "https://github.com/agronholm/apscheduler.git", rev = "4.0.0a5"}
 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
 
 [build-system]
 requires = ["poetry-core"]
