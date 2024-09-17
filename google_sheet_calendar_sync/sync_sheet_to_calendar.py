@@ -15,7 +15,7 @@ SERVICE_ACCOUNT_FILE = "credentials/fs-calendar-408013-bbc8c645727f.json"
 SHEET_ID = "1bfVVtUM8FFe3bB4JDwnd0TsJ56G2RutqNk9rshx3Rf4"
 SHEETS_TO_SYNC = ["2024", "2025", "2026"]
 CALENDAR_ID = "7aff4042ee7d9e05524e8ea9b5b7be55d1b6fee3090a7acc161160456da0d819@group.calendar.google.com"
-CLEAR_CALENDAR = False
+CLEAR_CALENDAR = True
 
 
 def check_str_content(content):
