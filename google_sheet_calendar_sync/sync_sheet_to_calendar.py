@@ -135,7 +135,7 @@ def main():
     with Scheduler() as scheduler:
         scheduler.add_schedule(
             sync,
-            CronTrigger.from_crontab("50 * * * *"),
+            CronTrigger(hour=23, minute=50),
         )
         try:
             scheduler.run_until_stopped()
