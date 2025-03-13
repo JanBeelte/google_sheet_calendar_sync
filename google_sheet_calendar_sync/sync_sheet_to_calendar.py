@@ -1,5 +1,6 @@
 #!/usr/local/bin/python3
 import warnings
+from datetime import datetime
 
 import pandas as pd
 import pygsheets
@@ -13,7 +14,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 SERVICE_ACCOUNT_FILE = "credentials/fs-calendar-408013-bbc8c645727f.json"
 SHEET_ID = "1bfVVtUM8FFe3bB4JDwnd0TsJ56G2RutqNk9rshx3Rf4"
-SHEETS_TO_SYNC = ["2024", "2025", "2026"]
+SHEETS_TO_SYNC = ["2025", "2026"]
 CALENDAR_ID = "7aff4042ee7d9e05524e8ea9b5b7be55d1b6fee3090a7acc161160456da0d819@group.calendar.google.com"
 CLEAR_CALENDAR = True
 
@@ -100,6 +101,15 @@ def write_to_calendar(gc, all_entries):
     return gc
 
 
+def clear_calendar(gc: GoogleCalendar):
+    events = gc.get_events(
+        time_min=datetime(year=int(SHEETS_TO_SYNC[0]), month=1, day=1),
+        time_max=datetime(year=int(SHEETS_TO_SYNC[-1]), month=12, day=31),
+    )
+    for event in events:
+        gc.delete_event(event)
+
+
 def sync():
     print("Reading events from sheet...")
     all_entries = read_master_sheet()
@@ -115,8 +125,7 @@ def sync():
         # This only works on primary calendars
         # gc.clear_calendar()
         print("Clearing calendar...")
-        for event in gc:
-            gc.delete_event(event)
+        clear_calendar(gc)
 
     print("Syncing events to calendar...")
     write_to_calendar(gc, all_entries)
